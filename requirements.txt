@@ -1,0 +1,5 @@
+requests>=2.31
+PyYAML>=6.0
+python-dotenv>=1.0
+jsonpath-ng>=1.6
+plyer>=2.1 ; platform_system == "Windows"

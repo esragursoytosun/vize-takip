@@ -1,0 +1,19 @@
+# Referans systemd servis sablonu.
+# NOT: setup_oracle.sh bu dosyayi dogru kullanici/yol ile OTOMATIK uretir;
+# elle kopyalamana gerek yok. Sadece nasil gorundugunu gormek icin burada.
+[Unit]
+Description=Vize Randevu Takip
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/vize-takip
+ExecStart=/home/ubuntu/vize-takip/.venv/bin/python run.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

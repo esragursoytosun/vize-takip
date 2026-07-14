@@ -1,0 +1,66 @@
+# ============================================================================
+#  Vize Randevu Takip - Ayar dosyasi
+#  Bu dosyayi 'config.yaml' olarak kopyala ve kendine gore doldur.
+# ============================================================================
+
+poll:
+  base_interval_seconds: 120     # nazik aralik: 2 dakikada bir (agresif olma)
+  jitter_seconds: 45             # her turda +/- rastgele gecikme (bot gibi gorunme)
+  backoff_max_seconds: 1800      # ust uste hata olursa 30 dk'ya kadar geri cekil
+  quiet_hours: [1, 6]            # gece 01:00-06:00 arasi kontrol etme (bos birak: [] )
+  reminder_minutes: 30           # randevu hala aciksa her 30 dk'da bir tekrar hatirlat
+
+notify:
+  telegram:
+    enabled: true
+    bot_token_env: TELEGRAM_BOT_TOKEN
+    chat_id_env: TELEGRAM_CHAT_ID
+  email:
+    enabled: true
+    smtp_host: smtp.gmail.com
+    smtp_port: 587
+    username_env: SMTP_USER
+    password_env: SMTP_PASS
+    to: senin.adresin@gmail.com
+  desktop:
+    enabled: true
+    sound: true
+
+# ----------------------------------------------------------------------------
+#  Izlenecek randevular. Yeni ulke = yeni bir blok. Kod degistirmeye gerek yok.
+# ----------------------------------------------------------------------------
+watchers:
+  - name: "Malta - Istanbul - Turist Vizesi"
+    provider: http_generic
+    enabled: true
+    open_url: "https://onlineappointment.mfa.com.mt/"   # bildirimde acilacak link
+    request:
+      method: GET
+      # Tarayici F12 > Network'ten yakaladigin uygunluk/slot istegi:
+      url: "https://ORNEK-DOMAIN/api/appointments/available"
+      cookies_env: MALTA_SESSION_COOKIE
+      headers:
+        User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        Accept: "application/json, text/plain, */*"
+        # gerekiyorsa X-CSRF-Token, Referer vb. buraya
+    availability:
+      # --- YONTEM A: JSON cevabi ---
+      type: json
+      # Su ifade doluysa/truthy ise "randevu var" sayilir:
+      json_available_path: "$.data[*].available"
+      # (alternatif) belirli bir sayaci kontrol et:
+      # json_count_path: "$.availableSlots"
+      # min_count: 1
+
+      # --- YONTEM B: HTML/metin cevabi (yukaridaki type'i 'text' yap) ---
+      # type: text
+      # unavailable_markers: ["Randevu bulunmamaktadir", "no appointment", "dolu"]
+      # available_markers: ["Uygun tarih", "Book", "Randevu Al"]
+
+  # Sonradan eklemek istersen ornek (kapali):
+  # - name: "Almanya - Ankara - Aile Birlesimi"
+  #   provider: http_generic
+  #   enabled: false
+  #   open_url: "https://..."
+  #   request: { ... }
+  #   availability: { ... }

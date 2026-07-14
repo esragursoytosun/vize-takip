@@ -1,0 +1,44 @@
+# ============================================================================
+#  GitHub Actions (cron) icin ayar dosyasi.
+#  BU DOSYA REPO'YA GIRER ama GIZLI BILGI ICERMEZ:
+#  tokenlar/cookie sadece 'env' isimleriyle referans verilir; gercek degerler
+#  GitHub repo > Settings > Secrets and variables > Actions altinda tutulur.
+# ============================================================================
+
+poll:
+  base_interval_seconds: 75      # her tetikte ~75 sn'de bir kontrol
+  jitter_seconds: 20
+  backoff_max_seconds: 240
+  quiet_hours: []                # GitHub cron zaten sürekli; sessiz saat gerekmez
+  reminder_minutes: 30
+
+notify:
+  telegram:
+    enabled: true
+    bot_token_env: TELEGRAM_BOT_TOKEN
+    chat_id_env: TELEGRAM_CHAT_ID
+  email:
+    enabled: true
+    smtp_host: smtp.gmail.com
+    smtp_port: 587
+    username_env: SMTP_USER
+    password_env: SMTP_PASS
+    # 'to' yazilmadi -> bildirim SMTP_USER adresine (kendine) gider
+  desktop:
+    enabled: false               # sunucuda ekran yok
+
+watchers:
+  - name: "Malta - Istanbul - Turist Vizesi"
+    provider: http_generic
+    enabled: true
+    open_url: "https://onlineappointment.mfa.com.mt/"
+    request:
+      method: GET
+      url: "https://ORNEK-DOMAIN/api/appointments/available"   # Claude dolduracak
+      cookies_env: MALTA_SESSION_COOKIE
+      headers:
+        User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        Accept: "application/json, text/plain, */*"
+    availability:
+      type: json
+      json_available_path: "$.data[*].available"
