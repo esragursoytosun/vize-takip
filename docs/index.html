@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vize Randevu Takip — Durum</title>
+<style>
+  :root{
+    --bg:#f4f5fb; --card:#ffffff; --text:#1a1c2b; --muted:#6b7080;
+    --line:#e6e8f0; --brand:#4f46e5; --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
+    --shadow:0 8px 24px rgba(30,32,60,.08);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#0f1117; --card:#181b24; --text:#eef0f6; --muted:#9aa0b4;
+           --line:#282c39; --shadow:0 8px 24px rgba(0,0,0,.4); }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+       background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;padding:16px}
+  .wrap{max-width:640px;margin:0 auto}
+  header{display:flex;align-items:center;gap:10px;margin:8px 4px 20px}
+  header .dot{font-size:26px}
+  header h1{font-size:19px;margin:0;font-weight:700}
+  .status{background:var(--card);border-radius:18px;padding:24px;box-shadow:var(--shadow);
+          text-align:center;margin-bottom:16px;border:1px solid var(--line)}
+  .badge{font-size:44px;line-height:1;margin-bottom:12px}
+  .headline{font-size:20px;font-weight:700;margin:0 0 6px}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .tile{background:var(--card);border-radius:14px;padding:16px;border:1px solid var(--line)}
+  .tile .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .tile .v{font-size:16px;font-weight:600;margin-top:6px}
+  .card{background:var(--card);border-radius:16px;padding:8px;border:1px solid var(--line);
+        box-shadow:var(--shadow)}
+  .card h2{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;
+           margin:12px 12px 8px}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:1px solid var(--line);
+     font-size:14px}
+  li:first-child{border-top:none}
+  li .ic{font-size:15px}
+  li .when{margin-left:auto;color:var(--muted);font-size:13px;white-space:nowrap}
+  .note{color:var(--muted);font-size:13px;text-align:center;margin:18px 6px;line-height:1.5}
+  .btns{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+  a.btn,button.btn{appearance:none;border:1px solid var(--line);background:var(--card);
+     color:var(--text);text-decoration:none;padding:9px 16px;border-radius:10px;font-size:14px;
+     font-weight:600;cursor:pointer}
+  a.btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .muted{color:var(--muted)}
+  .spin{display:inline-block;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="dot">🛂</span>
+    <h1>Vize Randevu Takip</h1>
+  </header>
+
+  <div class="status" id="status">
+    <div class="badge"><span class="spin">⏳</span></div>
+    <p class="headline">Durum yükleniyor…</p>
+    <p class="sub">GitHub'dan son kontroller alınıyor</p>
+  </div>
+
+  <div class="grid">
+    <div class="tile"><div class="k">Son kontrol</div><div class="v" id="lastCheck">—</div></div>
+    <div class="tile"><div class="k">Kontrol sıklığı</div><div class="v">~40 saniye</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Son çalışmalar</h2>
+    <ul id="runs"><li class="muted">Yükleniyor…</li></ul>
+  </div>
+
+  <div class="btns">
+    <button class="btn" onclick="load()">🔄 Yenile</button>
+    <a class="btn" href="https://github.com/esragursoytosun/vize-takip/actions" target="_blank" rel="noopener">GitHub Actions</a>
+  </div>
+
+  <p class="note">
+    Bu pano sistemin <b>çalışıp çalışmadığını</b> gösterir.<br>
+    Randevu açıldığında asıl bildirim <b>Telegram</b>'dan telefonuna düşer.
+  </p>
+</div>
+
+<script>
+const REPO = "esragursoytosun/vize-takip";
+const API = `https://api.github.com/repos/${REPO}/actions/runs?per_page=8`;
+
+function rel(iso){
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return s + " sn önce";
+  if (s < 3600) return Math.floor(s/60) + " dk önce";
+  if (s < 86400) return Math.floor(s/3600) + " sa önce";
+  return Math.floor(s/86400) + " gün önce";
+}
+function fmt(iso){
+  try { return new Date(iso).toLocaleString("tr-TR"); } catch(e){ return iso; }
+}
+function statusIcon(r){
+  if (r.status !== "completed") return "🔵";       // calisiyor
+  if (r.conclusion === "success") return "🟢";
+  if (r.conclusion === "cancelled") return "⚪";
+  return "🔴";
+}
+
+async function load(){
+  const box = document.getElementById("status");
+  try{
+    const res = await fetch(API, {headers:{Accept:"application/vnd.github+json"}});
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const runs = data.workflow_runs || [];
+
+    if(runs.length === 0){
+      box.innerHTML = `<div class="badge">🕓</div>
+        <p class="headline">Henüz çalışma yok</p>
+        <p class="sub">İlk otomatik kontrol birkaç dakika içinde başlayacak.</p>`;
+      document.getElementById("runs").innerHTML = '<li class="muted">Kayıt yok</li>';
+      return;
+    }
+
+    const last = runs[0];
+    const running = last.status !== "completed";
+    const ok = last.conclusion === "success";
+    let badge, head, sub;
+    if(running){ badge="🔵"; head="Şu an kontrol ediyor…"; sub="Sistem aktif çalışıyor."; }
+    else if(ok){ badge="✅"; head="Sistem çalışıyor"; sub="Son kontrol başarıyla tamamlandı."; }
+    else { badge="⚠️"; head="Son çalışma sorunlu"; sub="Ayrıntı için GitHub Actions'a bak."; }
+
+    box.innerHTML = `<div class="badge">${badge}</div>
+      <p class="headline">${head}</p><p class="sub">${sub}</p>`;
+    document.getElementById("lastCheck").textContent = rel(last.created_at);
+
+    document.getElementById("runs").innerHTML = runs.map(r =>
+      `<li><span class="ic">${statusIcon(r)}</span>
+         <span>${r.status==="completed" ? (r.conclusion||"?") : "çalışıyor"}</span>
+         <span class="when" title="${fmt(r.created_at)}">${rel(r.created_at)}</span></li>`
+    ).join("");
+  }catch(err){
+    box.innerHTML = `<div class="badge">❓</div>
+      <p class="headline">Durum alınamadı</p>
+      <p class="sub">${err.message}. Birazdan tekrar denenecek.</p>`;
+  }
+}
+load();
+setInterval(load, 120000); // 2 dakikada bir otomatik yenile (API limitine takılmadan)
+</script>
+</body>
+</html>
