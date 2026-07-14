@@ -6,9 +6,9 @@
 # ============================================================================
 
 poll:
-  base_interval_seconds: 75      # her tetikte ~75 sn'de bir kontrol
-  jitter_seconds: 20
-  backoff_max_seconds: 240
+  base_interval_seconds: 40      # her tetikte ~40 sn'de bir kontrol (siki ama nazik)
+  jitter_seconds: 8
+  backoff_max_seconds: 180
   quiet_hours: []                # GitHub cron zaten sürekli; sessiz saat gerekmez
   reminder_minutes: 30
 
